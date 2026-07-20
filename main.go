@@ -8,7 +8,7 @@ import (
 func main() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Esta es una api funcional en go de pruebas en gcp.")
+		fmt.Fprintf(w, "¡Hola! Esta es mi API de Go desplegada de forma 100% automática con CI/CD 🚀")
 	})
 
 	fmt.Println("Servidor escuchando en http://localhost:8080")
