@@ -32,10 +32,21 @@ func obtenerProductosHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(productos)
 }
 
+func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
+
+	// Configurar la cabecera para avisar que enviamos un json
+	w.Header().Set("Content-Type", "application/json")
+
+	// Crear un mensaje de estado
+	mensaje := map[string]string{"status": "ok"}
+	json.NewEncoder(w).Encode(mensaje)
+}
+
 func main() {
 
 	// Paso 4: Configurar el servidor HTTP y asociarla con su controlador
 	http.HandleFunc("/api/productos", obtenerProductosHandler)
+	http.HandleFunc("/health", healthCheckHandler)
 
 	//Iniciar el servidor en el puerto 8080
 	fmt.Println("Servidor escuchando en http://localhost:8080")
