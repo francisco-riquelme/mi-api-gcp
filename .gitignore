@@ -1,0 +1,5 @@
+#.gitignore
+
+mi-api-gcp
+*.exe
+*.bin
