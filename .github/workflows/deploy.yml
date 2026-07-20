@@ -1,0 +1,52 @@
+name: CI/CD Pipeline - Deploy Go API to GCP
+
+# El pipeline se activará de forma automática SOLO cuando hagas un "git push" a la rama main
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  # ETAPA 1: Construir la imagen y subirla a Docker Hub
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código del repositorio
+        uses: actions/checkout@v4
+
+      - name: Iniciar sesión en Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Construir la imagen de Docker y subirla
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/prueba-imagenes:latest
+
+  # ETAPA 2: Conectarse al servidor de GCP por SSH y desplegar
+  deploy-to-gcp:
+    runs-on: ubuntu-latest
+    needs: build-and-push # Esta etapa no inicia si la compilación anterior falla
+    steps:
+      - name: Ejecutar comandos remotos por SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.GCP_HOST }}
+          username: francisco_riquelme1999 # <-- OJO: Verifica si este es exactamente tu usuario SSH de GCP
+          key: ${{ secrets.GCP_SSH_KEY }}
+          port: 22
+          script: |
+            # 1. Descargar la última versión de la imagen que subió GitHub Actions
+            docker pull ${{ secrets.DOCKER_USERNAME }}/prueba-imagenes:latest
+            
+            # 2. Detener el contenedor actual si ya está corriendo (el || true evita que falle si no encuentra ninguno)
+            docker stop mi-api-produccion || true
+            
+            # 3. Borrar el contenedor antiguo para liberar el nombre y el puerto 8080
+            docker rm mi-api-produccion || true
+            
+            # 4. Levantar el nuevo contenedor con los últimos cambios
+            docker run -d -p 8080:8080 --name mi-api-produccion ${{ secrets.DOCKER_USERNAME }}/prueba-imagenes:latest
